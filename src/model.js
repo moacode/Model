@@ -3,10 +3,11 @@
  * Lightweight Data Models & Result objects for client side operations.
  *
  * @author  	Josh Smith <josh@customd.com>
- * @version 	0.0.4
+ * @version 	0.0.5
  * @requires 	Adapter, lodash
  * @date    	15/04/2016
  *
+ * @since  		0.0.5 Fixed bug in `_fn.process_adapter_data` where un-merged array was being returned when Store was the only adapter being used.
  * @since  		0.0.4 Added valueOf method to the Result object
  * @since  		0.0.3 Updated adapter method types
  * @since  		0.0.2 Updated merge method to copy object properties from new array into the source.
@@ -26,11 +27,8 @@
 	var plugin = {
 		model 	: {
 			name	: 'Model',
-			version	: '0.0.2'
-		},
-		result 	: {
-			name 	: 'Result',
-			version	: '0.0.2'
+			version	: '0.0.5',
+			author 	: 'Josh Smith <josh@customd.com>'
 		}
 	};
 
@@ -302,7 +300,7 @@
 	 * Accepts a 'scope' object that captures needed variables from the calling scope.
 	 *
 	 * @author Josh Smith <josh@customd.com>
-	 * @since  0.0.1      Introduced
+	 * @since  0.0.5      Fixed bug where un-merged array was being returned when Store was the only adapter being used.
 	 * @date   2016-06-17
 	 *
 	 * @param  {array}    results    An array of results, resolved from the Promises
@@ -324,7 +322,8 @@
 				// We have a direct match in the Store, just resolve the promise with results.
 				if( this.adapters.length === 1 )
 				{
-					scope.promise.resolve(adapter_results);
+					// Flatten the array, as we don't need to work with the results of each adapter
+					scope.promise.resolve(_.flatten(adapter_results));
 				}
 
 				// Store the found results in the other adapters
@@ -340,7 +339,7 @@
 					// We want to store all data as result objects.
 					var result_objects = _fn.process_result_objects.call(self, data);
 
-					// Loop through all the tried adapters in reverse order. This ensures all results end up
+					// Loop through all the adapters in reverse order. This ensures all results end up
 					// being saved back into the Store adapter. We keep track of when this is done using promises.
 					_.forEachRight(self.adapters, function(adapter){
 						var result = adapter.insert_or_update.apply(adapter, [result_objects]); // insert or update
