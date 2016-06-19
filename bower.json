@@ -1,0 +1,27 @@
+{
+  "name": "model",
+  "authors": [
+    "Josh Smith <josh@customd.com>"
+  ],
+  "description": "Lightweight Data Models for the front end.",
+  "main": "model.js",
+   "dependencies": {
+    "lodash": "~4.13.1"
+  },
+  "keywords": [
+    "Data",
+    "Model",
+    "Model",
+    "Result",
+    "Object"
+  ],
+  "license": "MIT",
+  "homepage": "https://www.customd.com/",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
