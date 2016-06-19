@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>Model: Store Adapter Test</title>
+		<meta name="description" content="">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+	</head>
+	<body>
+		<!--[if lt IE 7]>
+			<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+		<![endif]-->
+
+		<h1>Users Model Test</h1>
+
+		<p>Listed below are the users contained in the model, retrieved using the Store adapter:</p>
+		<ul class="js__all_users"></ul>
+
+		<p>Listed below are active users:</p>
+		<ul class="js__active_users"></ul>
+
+		<p>Listed below are inactive users:</p>
+		<ul class="js__inactive_users"></ul>
+
+		<p>Users Added: <span class="js__number_users_added">0</span></p>
+
+		<h2>Employee of the month</h2>
+		<p class="js__employee_of_the_month"></p>
+
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+		<script src="../bower_components/lodash/dist/lodash.js"></script>
+		<script src="../src/adapter.js"></script>
+		<script src="../src/model.js"></script>
+		<script src="../src/adapters/store.adapter.js"></script>
+		<script src="store_adapter_test/store_adapter_test.js"></script>
+	</body>
+</html>
