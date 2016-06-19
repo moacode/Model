@@ -3,10 +3,11 @@
  * Lightweight Data Models & Result objects for client side operations.
  *
  * @author  	Josh Smith <josh@customd.com>
- * @version 	0.0.5
+ * @version 	0.0.6
  * @requires 	Adapter, lodash
  * @date    	15/04/2016
  *
+ * @since 		0.0.6 Fixed syntax error in plugin versioning
  * @since  		0.0.5 Fixed bug in `_fn.process_adapter_data` where un-merged array was being returned when Store was the only adapter being used.
  * @since  		0.0.4 Added valueOf method to the Result object
  * @since  		0.0.3 Updated adapter method types
@@ -25,11 +26,14 @@
 	 * @type {string}
 	 */
 	var plugin = {
+		version	: '0.0.5',
+		author 	: 'Josh Smith <josh@customd.com>',
 		model 	: {
-			name	: 'Model',
-			version	: '0.0.5',
-			author 	: 'Josh Smith <josh@customd.com>'
-		}
+			name	: 'Model'
+		},
+		result 	: {
+			name	: 'Result'
+		},
 	};
 
 	/**
@@ -449,7 +453,7 @@
 	 * Define the Model Constructor Function
 	 *
 	 * @author Josh Smith <josh@customd.com>
-	 * @since  0.0.1      Introduced
+	 * @since  0.0.6 Fixed syntax error in plugin versioning
 	 * @date   2016-04-18
 	 *
 	 * @return {function}
@@ -715,7 +719,7 @@
 			 * Internal version of this plugin
 			 * @type {string}
 			 */
-			version : plugin.model.version,
+			version : plugin.version,
 
 			/**
 			 * Priviliged method definition
@@ -745,7 +749,7 @@
 	 * Define the Result Object Constructor
 	 *
 	 * @author Josh Smith <josh@customd.com>
-	 * @since  0.0.1      Introduced
+	 * @since  0.0.6 Fixed syntax error in plugin versioning
 	 * @date   2016-04-18
 	 *
 	 * @return {function}
@@ -880,7 +884,7 @@
 			 * Internal version of this plugin
 			 * @type {string}
 			 */
-			version : plugin.result.version,
+			version : plugin.version,
 
 			/**
 			 * Priviliged method definition.
