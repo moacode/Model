@@ -39,7 +39,7 @@ var photos_model;
 		var $photos_list = $('.js__photos'); $photos_list.empty();
 
 		_.each(photos, function(photo){
-			$('.js__photos').append('<li><figure>'+photo.get_img_src_html()+'<figcaption>'+photo.title+'</figcaption></figure></li>');
+			$photos_list.append('<li><figure>'+photo.get_img_src_html()+'<figcaption>'+photo.title+'</figcaption></figure></li>');
 		});
 
 	});
