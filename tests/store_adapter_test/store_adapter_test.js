@@ -20,6 +20,9 @@ var users_model;
 			},
 			get_status_color : function get_status_color(){
 				return this.status === 'active' ? 'green' : 'red';
+			},
+			get_occupation : function get_occupation(){
+				return this.occupation;
 			}
 		})
 	});
@@ -41,13 +44,13 @@ var users_model;
 		{user_id: 3, fullname: 'Reagan Ruiz', age: 50, occupation: 'Project Manager', status: 'active'},
 		{user_id: 4, fullname: 'Xena Rivers', age: 33, occupation: 'Receptionist', status: 'active'},
 		{user_id: 5, fullname: 'Bevis Gentry', age: 42, occupation: 'Accountant', status: 'active'},
-		{user_id: 6, fullname: 'Ursa Espinoza', age: 48, occupation: 'Janitor', status: 'inactive'}
+		{user_id: 6, fullname: 'Ursa Espinoza', age: 48, occupation: 'Janitor', status: 'inactive'},
 	]);
 
 	// Get all users, then write names to a list.
 	users_model.get_all().then(function(users){
 		users.forEach(function(user){
-			$('.js__all_users').append('<li>'+user.get_fullname()+'</li>');
+			$('.js__all_users').append('<li>'+user.get_fullname()+' - Employed as a '+user.get_occupation()+'.</li>');
 		});
 	});
 
@@ -68,6 +71,8 @@ var users_model;
 			$('.js__inactive_users').append('<li><span style="color:'+user.get_status_color()+';">'+user.get_fullname()+'</span></li>');
 		});
 	});
+
+	console.log('Direct Properties: ', users_model.get_all_direct());
 
 
 })();
