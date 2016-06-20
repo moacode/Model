@@ -15,6 +15,7 @@
  * @since  		0.0.2 Updated merge method to copy object properties from new array into the source.
  * @since   	0.0.1 Introduced
  *
+ * @todo  Remove Model.prototype._build_result method. This should be private.
  */
 (function(){
 
@@ -655,7 +656,7 @@
 		};
 
 		/**
-		 * Polymorphic method that extends CD_Model and returns a Model object.
+		 * Polymorphic method that extends Model and returns a Model object.
 		 *
 		 * @author Josh Smith <josh@customd.com>
 		 * @since  0.0.1      Introduced
