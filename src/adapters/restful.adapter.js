@@ -2,10 +2,12 @@
  * RESTful Adapter
  *
  * @author 	Josh Smith <josh@customd.com>
- * @version 0.0.1
+ * @version 0.0.3
  * @date   	2016-06-19
  *
- * @since  0.0.1 Introduced
+ * @since  0.0.3 	Updated get_where method to use custom attributes on top of existing ordering.
+ * @since  0.0.2 	Added get_all method
+ * @since  0.0.1 	Introduced
  *
  * @todo : Add if-modiied-since timestamp. Only search for more results after the configured time period.
  */
@@ -26,8 +28,22 @@
 	 */
 	Adapter.Restful = Adapter.extend(function(settings, parent){
 
+		var defaults = {
+			endpoint 	: '',
+			attribute 	: null,
+			prefetch 	: false,
+			attributes 		: {
+				sort 		: 'sort',
+				order 		: 'order',
+				limit		: 'limit',
+				like 		: 'like'
+			},
+			params 		: {},
+			io 			: ['r']
+		};
+
 		// Give access to parent instance settings
-		var _settings = settings;
+		var _settings = _.defaultsDeep(settings, defaults);
 
 		/**
 		 * Create a GET style query string from the passed parameters
@@ -79,7 +95,7 @@
 			// Build a request object
 			var request = {
 				'method' 	: method,
-				'url' 		: _settings.endpoint.replace(/\/+$/, '') + '/' + endpoint,
+				'url' 		: _settings.endpoint.replace(/\/+$/, '') + endpoint,
 				'dataType'	: 'json',
 				'timeout' 	: _settings.timeout,
 				'headers' 	: {},
@@ -90,8 +106,10 @@
 				request.data = data;
 			}
 
+			// Return the response data, filtered by key if set.
 			$.ajax(request).done(function(response){
-				$request_promise.resolve(response[_settings.attribute]);
+				var request_data = (_.isString(_settings.attribute) ? response[_settings.attribute] : response);
+				$request_promise.resolve(request_data);
 			});
 
 			return $request_promise;
@@ -126,23 +144,65 @@
 			 * @return {object}              Result object
 			 */
 			get : function get(id){
+				var where = {}; where[_settings.keys.primary] = id;
+				return this.get_where(where, null, 1);
+			},
 
+			/**
+			 * Override the default interface get method
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.2      Added get_all method
+			 * @date   2016-04-19
+			 *
+			 * @param  {integer}   id        ID of the object
+			 * @return {object}              Result object
+			 */
+			get_all : function get_all(order, limit){
+				return this.get_where({}, order, limit);
 			},
 
 			/**
 			 * Get data matching the where criteria
 			 *
 			 * @author Josh Smith <josh@customd.com>
-			 * @since  0.0.1      Introduced
+			 * @since  0.0.3      Updated get_where method to use custom attributes on top of existing ordering.
 			 * @date   2016-04-19
 			 *
-			 * @param  {object}   where      [description]
-			 * @param  {string}   order      [description]
-			 * @param  {integer}  limit      [description]
-			 * @return {array}               [description]
+			 * @param  {object}   where      Where clause
+			 * @param  {string}   order      Order clause
+			 * @param  {integer}  limit      Limit clause
+			 * @return {array}               A collection of matching data
 			 */
 			get_where : function get_where(where, order, limit){
-				return _make_request('get', _parse_query(where, order, limit));
+
+				// Make a new object that doesn't mutate the original where object
+				var query = _.defaults({}, query, where);
+
+				// Use the order parameter as extra resource filtering, if an object.
+				if( _.isPlainObject(order) )
+				{
+					_.each(order, function(param, resource){
+
+						// Work out if this attribute has been defined, otherwise use its raw form.
+						var attribute = _.isUndefined(_settings.attributes[resource]) ? resource : _settings.attributes[resource];
+
+						// Add this attribute to the query
+						query[attribute] = param;
+
+					});
+				}
+
+				// Use it to set the defined order
+				else if( !_.isUndefined(order) )
+				{
+					query[_settings.attributes.order] = order;
+				}
+
+				// Set the limit parameter
+				if( !_.isUndefined(limit) ){ query[_settings.attributes.limit] = limit; }
+
+				return _make_request('get', _parse_query(query));
 			},
 
 			/**

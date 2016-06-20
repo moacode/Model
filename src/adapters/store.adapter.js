@@ -42,7 +42,7 @@
 			 * @date   2016-06-19
 			 *
 			 * @param  {array}   data       An array of objects
-			 * @return {[type]}             [description]
+			 * @return {array}
 			 */
 			insert_or_update : function(data){
 				return parent.insert_or_update.apply(this, [_internal, data]) || [];
@@ -90,10 +90,10 @@
 			 * @since  0.0.1      Introduced
 			 * @date   2016-04-19
 			 *
-			 * @param  {object}   where      [description]
-			 * @param  {string}   order      [description]
-			 * @param  {integer}  limit      [description]
-			 * @return {array}               [description]
+			 * @param  {object}   where      Where clause
+			 * @param  {string}   order      Order clause
+			 * @param  {integer}  limit      Limit clause
+			 * @return {array}               A collection of matching data
 			 */
 			get_where : function get_where(where, order, limit){
 				return parent.get_where.apply(this, [_internal, where, order, limit]) || [];
