@@ -3,10 +3,11 @@
  * Lightweight Data Models & Result objects for client side operations.
  *
  * @author  	Josh Smith <josh@customd.com>
- * @version 	0.0.7
+ * @version 	0.0.8
  * @requires 	Adapter, lodash
  * @date    	15/04/2016
  *
+ * @since  		0.0.8 Removed Model.prototype._build_result method and made private under _fn object.
  * @since  		0.0.7 Improved versioning object
  * @since 		0.0.6 Fixed syntax error in plugin versioning
  * @since  		0.0.5 Fixed bug in `_fn.process_adapter_data` where un-merged array was being returned when Store was the only adapter being used.
@@ -15,7 +16,6 @@
  * @since  		0.0.2 Updated merge method to copy object properties from new array into the source.
  * @since   	0.0.1 Introduced
  *
- * @todo  Remove Model.prototype._build_result method. This should be private.
  */
 (function(){
 
@@ -163,15 +163,53 @@
 		if( _.isArray(source) )
 		{
 			_.each(source, function(v, i){
-				if( ! _fn.result.isinstanceof(v) ){ source[i] = self._build_result(v); }
+				if( ! _fn.result.isinstanceof(v) ){ source[i] = _fn.build_result.call(self, v); }
 			});
 		}
 		else if( _.isObject(source) )
 		{
-			if( ! _fn.result.isinstanceof(source) ){ source = this._build_result(source); }
+			if( ! _fn.result.isinstanceof(source) ){ source = _fn.build_result.call(self, source); }
 		}
 
 		return source;
+	};
+
+	/**
+	 * Builds a result object from the passed data
+	 *
+	 * @author Josh Smith <josh@customd.com>
+	 * @since  0.0.8 	Removed Model.prototype._build_result method and made private under _fn object.
+	 * @date   2016-04-19
+	 *
+	 * @param  {mixed}   data   An array or object of data
+	 * @return {mixed}          A result object or array of result objects
+	 */
+	_fn.build_result = function build_result(data){
+
+		var self = this;
+
+		// Create a default result object function if not defined
+		if( ! _.isFunction(this.result_model) )
+		{
+			this.result_model = _fn.result.extend();
+		}
+
+		if( ! _.isArray(data) )
+		{
+			// Create a singular result object
+			data = new self.result_model(data);
+			self.trigger('add', [data]); // Trigger the 'add' event
+		}
+		else
+		{
+			// Create an array of result objects
+			_.each(data, function(value, key){
+				data[key] = new self.result_model(value);
+				self.trigger('add', [data[key]]); // Trigger the 'add' event
+			});
+		}
+
+		return data;
 	};
 
 	/**
@@ -616,44 +654,6 @@
 		// Set the Model prototype and constructor
 		Model.prototype = Object.create(core.prototype);
 		Model.prototype.constructor = Model;
-
-		/**
-		 * Builds a result object from the passed data
-		 *
-		 * @author Josh Smith <josh@customd.com>
-		 * @since  0.0.1      Introduced
-		 * @date   2016-04-19
-		 *
-		 * @param  {mixed}   data       An array or object of data
-		 * @return {mixed}              A result object or array of result objects
-		 */
-		Model.prototype._build_result = function _build_result(data){
-
-			var self = this;
-
-			// Create a default result object function if not defined
-			if( ! _.isFunction(this.result_model) )
-			{
-				this.result_model = _fn.result.extend();
-			}
-
-			if( ! _.isArray(data) )
-			{
-				// Create a singular result object
-				data = new self.result_model(data);
-				self.trigger('add', [data]); // Trigger the 'add' event
-			}
-			else
-			{
-				// Create an array of result objects
-				_.each(data, function(value, key){
-					data[key] = new self.result_model(value);
-					self.trigger('add', [data[key]]); // Trigger the 'add' event
-				});
-			}
-
-			return data;
-		};
 
 		/**
 		 * Polymorphic method that extends Model and returns a Model object.
