@@ -433,6 +433,29 @@
 
 			break;
 
+			// Process deletion data
+			case 'delete':
+
+				adapter_results = adapter_results.pop();
+
+				// We only care about the store deletion results
+				var data = adapter_results[0];
+
+				// Loop the deleted data, and fire the on_remove method
+				if( _.isArray(data) && data.length > 0 )
+				{
+					_.each(data, function(o){ o.on_remove(); });
+				}
+				else if( !_.isArray(data) && _.isObject(data) )
+				{
+					data.on_remove();
+				}
+
+				// Resolve the promise with the deleted data
+				return scope.promise.resolve(data);
+
+			break;
+
 			// Process the results from multiple adapters for other requests.
 			default:
 				scope.promise.resolve(adapter_results);

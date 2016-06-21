@@ -40,8 +40,6 @@
 			endpoint 	: '',
 			headers 	: {},
 			io 			: ['r'],
-			params 		: {},
-			prefetch 	: false,
 			timeout 	: 10000,
 		};
 
@@ -152,20 +150,6 @@
 			},
 
 			/**
-			 * Override the default interface get method
-			 *
-			 * @author Josh Smith <josh@customd.com>
-			 * @since  0.0.2      Added get_all method
-			 * @date   2016-04-19
-			 *
-			 * @param  {integer}   id        ID of the object
-			 * @return {object}              Result object
-			 */
-			get_all : function get_all(order, limit){
-				return this.get_where({}, order, limit);
-			},
-
-			/**
 			 * Get data matching the where criteria
 			 *
 			 * @author Josh Smith <josh@customd.com>
@@ -209,17 +193,18 @@
 			},
 
 			/**
-			 * Prefetches data from the API
+			 * Override the default interface get method
 			 *
 			 * @author Josh Smith <josh@customd.com>
-			 * @since  0.0.1      Introduced
-			 * @date   2016-04-21
+			 * @since  0.0.2      Added get_all method
+			 * @date   2016-04-19
 			 *
-			 * @return {object}   Promise
+			 * @param  {integer}   id        ID of the object
+			 * @return {object}              Result object
 			 */
-			prefetch : function prefetch(){
-				return this.get_where(_settings.params, _settings.order, _settings.limit);
-			}
+			get_all : function get_all(order, limit){
+				return this.get_where({}, order, limit);
+			},
 
 		};
 

@@ -446,6 +446,12 @@
 			 */
 			delete_all : function delete_all(collection){
 				_fn.check_scope.call(this);
+
+				if( !_.isArray(collection) )
+				{
+					return [];
+				}
+
 				return collection.splice(0,collection.length);
 			},
 
