@@ -29,17 +29,20 @@
 	Adapter.Restful = Adapter.extend(function(settings, parent){
 
 		var defaults = {
-			endpoint 	: '',
 			attribute 	: null,
-			prefetch 	: false,
 			attributes 		: {
-				sort 		: 'sort',
-				order 		: 'order',
+				like 		: 'like',
 				limit		: 'limit',
-				like 		: 'like'
+				order 		: 'order',
+				sort 		: 'sort'
 			},
+			dataType	: 'json',
+			endpoint 	: '',
+			headers 	: {},
+			io 			: ['r'],
 			params 		: {},
-			io 			: ['r']
+			prefetch 	: false,
+			timeout 	: 10000,
 		};
 
 		// Give access to parent instance settings
