@@ -8,6 +8,7 @@
  * @version 0.0.3
  * @date   	2016-06-19
  *
+ * @since  0.0.4  Added delete methods to the interface
  * @since  0.0.3  Added update_where method
  * @since  0.0.2  Added method to return pre-populated ID where clause
  * @since  0.0.1  Introduced
@@ -91,7 +92,6 @@
 			insert_or_update	: {type: 'create'},
 			get					: {type: 'read'},
 			get_where			: {type: 'read'},
-			get_where_in		: {type: 'read'},
 			get_all				: {type: 'read'},
 			update				: {type: 'update'},
 			update_where		: {type: 'update'},
@@ -99,9 +99,12 @@
 			delete 				: {type: 'delete'},
 			delete_where 		: {type: 'delete'},
 			delete_where_in 	: {type: 'delete'},
+			delete_all 			: {type: 'delete'},
 			like				: {type: 'query'},
 			where				: {type: 'query'},
 			where_in 			: {type: 'query'},
+			where_or_in 		: {type: 'query'},
+			where_not_in 		: {type: 'query'},
 			sort				: {type: 'query'},
 			offset				: {type: 'query'},
 			limit				: {type: 'query'},
@@ -180,60 +183,6 @@
 				}
 
 				return _.size(collection);
-			},
-
-			/**
-			 * Updates an object with a specific ID
-			 *
-			 * @author Josh Smith <josh@customd.com>
-			 * @since  0.0.1      Introduced
-			 * @date   2016-06-19
-			 *
-			 * @param  {array}     collection  Data collection
-			 * @param  {object}    data        Data to update with
-			 * @param  {integer}   id          ID of the object to update
-			 * @return {object} 			   Result object
-			 */
-			update : function update(collection, data, id){
-				_fn.check_scope.call(this);
-				var result = this.update_where(data, _fn.get_id_where.call(this, id));
-				return result.length === 0 ? {} : result.pop();
-			},
-
-			/**
-			 * Updates objects in the collection matching the where clause
-			 *
-			 * @author Josh Smith <josh@customd.com>
-			 * @since  0.0.3      Added update_where method
-			 * @date   2016-06-19
-			 *
-			 * @param  {[type]}   collection [description]
-			 * @param  {[type]}   data       [description]
-			 * @param  {[type]}   where      [description]
-			 * @return {[type]}              [description]
-			 */
-			update_where : function update_where(collection, data, where){
-				_fn.check_scope.call(this);
-
-				if( !_.isArray(collection) || !_.isPlainObject(data) || !_.isObject(where) )
-				{
-					return [];
-				}
-
-				// Filter the collection down matching the where clauses.
-				var found = _.filter(collection, where);
-
-				// Return if the object doesn't exist
-				if( _.isUndefined(found) ){ return []; }
-
-				// Loop each found object and merge data in
-				_.each(found, function(o){ _.merge(o, data); });
-
-				return found;
-			},
-
-			update_where_in : function update_where_in(collection, data, key, values){
-				_fn.check_scope.call(this);
 			},
 
 			/**
@@ -345,6 +294,159 @@
 			get_all : function get_all(collection, order, limit){
 				_fn.check_scope.call(this);
 				return this.get_where(collection, {}, order, limit);
+			},
+
+			/**
+			 * Updates an object with a specific ID
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.1      Introduced
+			 * @date   2016-06-19
+			 *
+			 * @param  {array}     collection  Data collection
+			 * @param  {object}    data        Data to update with
+			 * @param  {integer}   id          ID of the object to update
+			 * @return {object} 			   Result object
+			 */
+			update : function update(collection, data, id){
+				_fn.check_scope.call(this);
+				var result = this.update_where(data, _fn.get_id_where.call(this, id));
+				return result.length === 0 ? {} : result.pop();
+			},
+
+			/**
+			 * Updates objects in the collection matching the where clause
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.3      Added update_where method
+			 * @date   2016-06-19
+			 *
+			 * @param  {array}    collection Data collection
+			 * @param  {object}   data       Data to update with
+			 * @param  {object}   where      An object of where parameters
+			 * @return {array}               An array of updated objects
+			 */
+			update_where : function update_where(collection, data, where){
+				_fn.check_scope.call(this);
+
+				if( !_.isArray(collection) || !_.isPlainObject(data) || !_.isObject(where) )
+				{
+					return [];
+				}
+
+				// Filter the collection down matching the where clauses.
+				var found = _.filter(collection, where);
+
+				// Return if the object doesn't exist
+				if( _.isUndefined(found) ){ return []; }
+
+				// Loop each found object and merge data in
+				_.each(found, function(o){ _.merge(o, data); });
+
+				return found;
+			},
+
+			/**
+			 * Updates objects in the collection with the passed data, for matching key/values
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  1.0.0      Introduced
+			 * @date   2016-06-21
+			 *
+			 * @param  {array}    collection Data collection
+			 * @param  {object}   data       Data to update with
+			 * @param  {string}   key        Key of the properties to match on
+			 * @param  {values}   values     Values matching the passed key
+			 * @return {array}               An array of updated objects
+			 */
+			update_where_in : function update_where_in(collection, data, key, values){
+				_fn.check_scope.call(this);
+			},
+
+			/**
+			 * Deletes an object from the collection
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.4  Added delete methods to the interface
+			 * @date   2016-06-21
+			 *
+			 * @param  {array}    collection Data collection
+			 * @param  {integer}  id         ID of the object to delete
+			 * @return {object}              Deleted object
+			 */
+			delete : function(collection, id){
+				_fn.check_scope.call(this);
+				var result = this.delete_where(_fn.get_id_where.call(this, id), 1);
+				return result.length === 0 ? {} : result.pop();
+			},
+
+			/**
+			 * Deletes objects in the collection matching the where clause
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.4  Added delete methods to the interface
+			 * @date   2016-06-19
+			 *
+			 * @param  {array}    collection Data collection
+			 * @param  {object}   where      An object of where parameters
+			 * @param  {integer}  limit      Limit objects to tbe deleted
+			 * @return {array}               An array of deleted objects
+			 */
+			delete_where : function delete_where(collection, where, limit){
+				_fn.check_scope.call(this);
+
+				if( !_.isArray(collection) || !_.isObject(where) )
+				{
+					return [];
+				}
+
+				// Filter the collection down matching the where clauses.
+				var to_delete 	= [],
+					found 		= _.filter(collection, where);
+
+				// Return if the object doesn't exist
+				if( _.isUndefined(found) ){ return []; }
+
+				// Loop the collection, and determine where the objects sit
+				_.each(collection, function(obj, i){
+					_.each(found, function(o, j){
+						if( obj === o ) to_delete.push(i);
+					});
+				});
+
+				return _.pullAt(collection, to_delete);
+			},
+
+			/**
+			 * Deletes objects in the collection for matching key/values
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.4  Added delete methods to the interface
+			 * @date   2016-06-21
+			 *
+			 * @param  {array}    collection Data collection
+			 * @param  {string}   key        Key of the properties to match on
+			 * @param  {values}   values     Values matching the passed key
+			 * @return {array}               An array of deleted objects
+			 */
+			delete_where_in : function delete_where_in(collection, key, values){
+				_fn.check_scope.call(this);
+			},
+
+			/**
+			 * Deletes all objects from the collection
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.4  Added delete methods to the interface
+			 * @date   2016-06-21
+			 *
+			 * @param  {array}    collection Data collection
+			 * @param  {integer}  id         ID of the object to delete
+			 * @return {object}              Deleted object
+			 */
+			delete_all : function delete_all(collection){
+				_fn.check_scope.call(this);
+				return collection.splice(0,collection.length);
 			},
 
 			/**

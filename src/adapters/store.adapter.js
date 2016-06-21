@@ -99,6 +99,50 @@
 				return parent.get_where.apply(this, [_internal, where, order, limit]) || [];
 			},
 
+			/**
+			 * Deletes an object from the collection
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.1      Introduced
+			 * @date   2016-06-21
+			 *
+			 * @param  {integer}  id         ID of the object to delete
+			 * @return {object}              Deleted object
+			 */
+			delete : function(id){
+				var result = parent.delete.apply(this, [_internal, id]);
+				return _.isArray(result) && result.length === 0 ? {} : result;
+			},
+
+			/**
+			 * Deletes objects in the collection matching the where clause
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.1      Introduced
+			 * @date   2016-06-19
+			 *
+			 * @param  {object}   where      An object of where parameters
+			 * @param  {integer}  limit      Limit objects to tbe deleted
+			 * @return {array}               An array of deleted objects
+			 */
+			delete_where : function delete_where(where, limit){
+				return parent.delete_where.apply(this, [_internal, where, limit]) || [];
+			},
+
+			/**
+			 * Deletes all objects from the collection
+			 *
+			 * @author Josh Smith <josh@customd.com>
+			 * @since  0.0.1      Introduced
+			 * @date   2016-06-21
+			 *
+			 * @param  {integer}  id         ID of the object to delete
+			 * @return {object}              Deleted object
+			 */
+			delete_all : function delete_all(){
+				return parent.delete_all.apply(this, [_internal]) || [];
+			}
+
 		};
 
 	});

@@ -3,10 +3,11 @@
  * Lightweight Data Models & Result objects for client side operations.
  *
  * @author  	Josh Smith <josh@customd.com>
- * @version 	0.0.11
+ * @version 	0.0.12
  * @requires 	Adapter, lodash
  * @date    	15/04/2016
  *
+ * @since  		0.0.12 Updated core prototype to generate direct methods automatically
  * @since  		0.0.11 Updated result prototype with on_load and on_remove methods.
  * @since  		0.0.10 Added method {@link _fn.setup_result} to fire load methods on creation of result objects
  * @since  		0.0.9 Improved firing of load events when creating result objects from multiple adapter results.
@@ -566,6 +567,7 @@
 		 * Maps Adapter interface functions to the model core.
 		 *
 		 * @author Josh Smith <josh@customd.com>
+		 * @since  0.0.12     Updated core prototype to generate direct methods automatically
 		 * @since  0.0.1      Introduced
 		 * @date   2016-06-16
 		 *
@@ -578,59 +580,23 @@
 
 			// Setup the link between adapter interface and core methods
 			_.each(adapter_methods, function(settings, method){
+
+				// Add an interfaced core method for each adapter.
 				core_methods[method] = function(){
 					return _fn.integrate_adapter_method.apply(this, [method, settings, arguments]);
-				}
+				};
+
+				// Add a direct core method for the store adapter
+				core_methods[method+'_direct'] = function(){
+					var args = Array.prototype.slice.call(arguments);
+					return this.store[method].apply(this.store, args);
+				};
+
 			});
 
 			return core_methods;
 
 		})(); core.prototype.constructor = core;
-
-		/**
-		 * Get a record directly from the store
-		 *
-		 * @author Josh Smith <josh@customd.com>
-		 * @since  0.0.1      Introduced
-		 * @date   2016-06-16
-		 *
-		 * @param  {integer}   id        ID of the record to get
-		 * @return {object}              Result object
-		 */
-		core.prototype.get_direct = function(id){
-			return this.store.get(id);
-		}
-
-		/**
-		 * Get where directly, without promises
-		 *
-		 * @author Josh Smith <josh@customd.com>
-		 * @since  0.0.1      Introduced
-		 * @date   2016-06-16
-		 *
-		 * @param  {object}   where      Where clause
-		 * @param  {string}   order      Order clause
-		 * @param  {integer}  limit      Limit clause
-		 * @return {array}               Array of result objects
-		 */
-		core.prototype.get_where_direct = function(where, order, limit){
-			return this.store.get_where(where, order, limit);
-		}
-
-		/**
-		 * Get all directly, without promises
-		 *
-		 * @author Josh Smith <josh@customd.com>
-		 * @since  0.0.1      Introduced
-		 * @date   2016-06-16
-		 *
-		 * @param  {string}   order      Order clause
-		 * @param  {integer}  limit      Limit clause
-		 * @return {array}               Array of result objects
-		 */
-		core.prototype.get_all_direct = function(order, limit){
-			return this.store.get_all(order, limit);
-		}
 
 		/**
 		 * Proprietary Model Constructor
