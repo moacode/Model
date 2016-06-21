@@ -3,14 +3,17 @@
  * Lightweight Data Models & Result objects for client side operations.
  *
  * @author  	Josh Smith <josh@customd.com>
- * @version 	0.0.8
+ * @version 	0.0.11
  * @requires 	Adapter, lodash
  * @date    	15/04/2016
  *
+ * @since  		0.0.11 Updated result prototype with on_load and on_remove methods.
+ * @since  		0.0.10 Added method {@link _fn.setup_result} to fire load methods on creation of result objects
+ * @since  		0.0.9 Improved firing of load events when creating result objects from multiple adapter results.
  * @since  		0.0.8 Removed Model.prototype._build_result method and made private under _fn object.
  * @since  		0.0.7 Improved versioning object
  * @since 		0.0.6 Fixed syntax error in plugin versioning
- * @since  		0.0.5 Fixed bug in `_fn.process_adapter_data` where un-merged array was being returned when Store was the only adapter being used.
+ * @since  		0.0.5 Fixed bug {@link _fn.process_adapter_data} where un-merged array was being returned when Store was the only adapter being used.
  * @since  		0.0.4 Added valueOf method to the Result object
  * @since  		0.0.3 Updated adapter method types
  * @since  		0.0.2 Updated merge method to copy object properties from new array into the source.
@@ -197,19 +200,42 @@
 		if( ! _.isArray(data) )
 		{
 			// Create a singular result object
-			data = new self.result_model(data);
-			self.trigger('add', [data]); // Trigger the 'add' event
+			data = _fn.setup_result.call(self, data);
 		}
 		else
 		{
 			// Create an array of result objects
 			_.each(data, function(value, key){
-				data[key] = new self.result_model(value);
-				self.trigger('add', [data[key]]); // Trigger the 'add' event
+				data[key] = _fn.setup_result.call(self, value);
 			});
 		}
 
 		return data;
+	};
+
+	/**
+	 * Creates the result object and performs additional method calls.
+	 * Triggers the add event and fires the on_load result method.
+	 *
+	 * @author Josh Smith <josh@customd.com>
+	 * @since  0.0.10      Added method to fire load methods on creation of result objects
+	 * @date   2016-06-21
+	 *
+	 * @param  {object}   data       Result object properties
+	 * @return {object}              Result object
+	 */
+	_fn.setup_result = function setup_result(data){
+
+		// Create a new result object
+		var result_object = new this.result_model(data);
+
+		// Run the on_load method
+		result_object.on_load();
+
+		// Trigger the 'add' event
+		this.trigger('add', [result_object]);
+
+		return result_object;
 	};
 
 	/**
@@ -295,15 +321,13 @@
 					// This is ignored if an array or object is not passed.
 					args[0] = _fn.process_result_objects.call(self, args[0]);
 
-				// Read method just runs the adapter methods
-				case 'read':
 				default:
 
 					// Call the adapter method in context of the adapter object, passing args used on the model.
 					result = adapter[method].apply(adapter, args);
 
 					// Create a promise from the result, and add to the promises array
-					if( !_fn.empty(result) ) { promises.push(_fn.create_adapter_request_promise(result)); }
+					promises.push(_fn.create_adapter_request_promise(result));
 
 				break;
 			}
@@ -344,7 +368,8 @@
 	 * Accepts a 'scope' object that captures needed variables from the calling scope.
 	 *
 	 * @author Josh Smith <josh@customd.com>
-	 * @since  0.0.5      Fixed bug where un-merged array was being returned when Store was the only adapter being used.
+	 * @since  0.0.9 	Improved firing of load events when creating result objects from multiple adapter results.
+	 * @since  0.0.5	Fixed bug where un-merged array was being returned when Store was the only adapter being used.
 	 * @date   2016-06-17
 	 *
 	 * @param  {array}    results    An array of results, resolved from the Promises
@@ -373,10 +398,20 @@
 				// Store the found results in the other adapters
 				else
 				{
-					var data, promises = [];
+					var data, promises = [],
+						collection_length = adapter_results[0]; // Store collection data length. Always accessible at position zero.
+
+					// Define a callback to read updated information from the store
+					var resolve_scope_promise = function(){
+						scope.promise.resolve(self.store[scope.method].apply(self.store, scope.args));
+					};
 
 					// Merge adapater result data together
 					data = _fn.merge_adapter_data.call(self, adapter_results);
+
+					// Detect if we've made any changes to the internal Store array
+					// If no changes are made, exit early by resolving the scope promise
+					if( data.length <= collection_length ) resolve_scope_promise();
 
 					// Convert the results into result objects.
 					// We need to do this here as well, as the results came from another adapter and will be raw objects.
@@ -392,15 +427,12 @@
 
 					// Once all found results have been saved back to all tried adapters, load the final result set from
 					// the Store adapter. This is guranteed to have the latest result set available, and will be in Result object format.
-					Promise.all(promises).then(function(results){
-						scope.promise.resolve(self.store[scope.method].apply(self.store, scope.args));
-					});
+					Promise.all(promises).then(function(results){ resolve_scope_promise(); });
 				}
 
 			break;
 
 			// Process the results from multiple adapters for other requests.
-			case 'create':
 			default:
 				scope.promise.resolve(adapter_results);
 			break;
@@ -757,6 +789,7 @@
 	 * Define the Result Object Constructor
 	 *
 	 * @author Josh Smith <josh@customd.com>
+	 * @since  0.0.11 Updated result prototype with on_load and on_remove methods.
 	 * @since  0.0.6 Fixed syntax error in plugin versioning
 	 * @date   2016-04-18
 	 *
@@ -781,6 +814,28 @@
 		core.prototype = (function(){
 
 			return {
+
+				/**
+				 * Fired when a result object is inserted into a collection
+				 *
+				 * @author Josh Smith <josh@customd.com>
+				 * @since  1.0.0      Introduced
+				 * @date   2016-06-21
+				 *
+				 * @return {void}
+				 */
+				on_load : function on_load(){},
+
+				/**
+				 * Fired when a result object is removed from a collection
+				 *
+				 * @author Josh Smith <josh@customd.com>
+				 * @since  1.0.0      Introduced
+				 * @date   2016-06-21
+				 *
+				 * @return {void}
+				 */
+				on_remove : function on_remove(){},
 
 				/**
 				 * Returns a string representation of this object
