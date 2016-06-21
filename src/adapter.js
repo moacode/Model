@@ -293,7 +293,7 @@
 			 */
 			get_all : function get_all(collection, order, limit){
 				_fn.check_scope.call(this);
-				return this.get_where(collection, {}, order, limit);
+				return this.get_where({}, order, limit);
 			},
 
 			/**
