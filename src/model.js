@@ -32,7 +32,7 @@
 	 * @type {string}
 	 */
 	var plugin = {
-		version	: '0.0.7',
+		version	: '0.0.12',
 		author 	: 'Josh Smith <josh@customd.com>',
 		model 	: {
 			name	: 'Model'
@@ -230,11 +230,7 @@
 		// Create a new result object
 		var result_object = new this.result_model(data);
 
-		// Run the on_load method
-		result_object.on_load();
-
-		// Trigger the 'add' event
-		this.trigger('add', [result_object]);
+		_fn.emitter.apply(this, ['read', result_object]);
 
 		return result_object;
 	};
@@ -265,19 +261,10 @@
 
 				var results = Array.prototype.slice.call(arguments);
 
-				// Make a scope object, that holds all scoped variables.
-				var scope = {
-					method : method,
-					settings : settings,
-					args : args,
-					promise : {
-						resolve : resolve,
-						reject 	: reject
-					}
-				};
-
 				// Resolves the overall promise
-				_fn.process_adapter_data.apply(self, [results, scope]);
+				_fn.process_adapter_data.apply(self, [self.adapters, results, settings, function(callback){
+					callback.apply(self, [resolve, reject, method, args]);
+				}]);
 
 			}, function(reason){
 				console.log(reason); resolve([]);
@@ -312,30 +299,41 @@
 			if( Adapter.isinstanceof(adapter) === false )
 				throw new Error('adapter must be an instance of Adapter.');
 
-			// Perform different action on the method type
-			switch(settings.type)
-			{
-				// Creates result objects and uses the default read case to create the store promises.
-				case 'create':
+			// Get results for this adapter
+			result = _fn.get_adapter_result.apply(self, [adapter, method, settings, args]);
 
-					// Convert the results into result objects.
-					// This is ignored if an array or object is not passed.
-					args[0] = _fn.process_result_objects.call(self, args[0]);
-
-				default:
-
-					// Call the adapter method in context of the adapter object, passing args used on the model.
-					result = adapter[method].apply(adapter, args);
-
-					// Create a promise from the result, and add to the promises array
-					promises.push(_fn.create_adapter_request_promise(result));
-
-				break;
-			}
+			// Create a promise from the result, and add to the promises array
+			promises.push(_fn.create_adapter_request_promise(result));
 
 		});
 
 		return promises;
+	}
+
+	/**
+	 * Returns the adapter method result
+	 *
+	 * @author Josh Smith <josh@customd.com>
+	 * @since  1.0.0      Introduced
+	 * @date   2016-06-22
+	 *
+	 * @param  {Adapter}  adapter    Adapter object
+	 * @param  {string}   method     Method to run on adapter
+	 * @param  {object}   settings   Method settings
+	 * @param  {array}    args       Arguments passed from method call
+	 * @return {mixed}               Results from adapter method call
+	 */
+	_fn.get_adapter_result = function get_adapter_result(adapter, method, settings, args){
+
+		if( settings.type === 'create' )
+		{
+			// Convert the results into result objects.
+			// This is ignored if an array or object is not passed.
+			args[0] = _fn.process_result_objects.call(this, args[0]);
+		}
+
+		// Call the adapter method in context of the adapter object, passing args used on the model.
+		return adapter[method].apply(adapter, args);
 	}
 
 	/**
@@ -377,43 +375,40 @@
 	 * @param  {object}   scope      Scope object.
 	 * @return {void}
 	 */
-	_fn.process_adapter_data = function process_adapter_data(adapter_results, scope){
+	_fn.process_adapter_data = function process_adapter_data(adapters, adapters_results, settings, callback){
 
-		var self = this;
+		var self 			= this,
+			processed_data 	= []
 
-		switch(scope.settings.type)
+		// Pop the results
+		adapters_results = adapters_results.pop();
+
+		//
+		// Process the adapter data, for the method type
+		//
+		switch(settings.type)
 		{
 			// Process result objects from multiple adapters for read requests
 			case 'read':
 
-				// Pop the results
-				adapter_results = adapter_results.pop();
-
-				// We have a direct match in the Store, just resolve the promise with results.
-				if( this.adapters.length === 1 )
-				{
-					// Flatten the array, as we don't need to work with the results of each adapter
-					scope.promise.resolve(_.flatten(adapter_results));
-				}
+				// Define a callback to read updated information from the store
+				// This is passed to the callback function, and passed these parameters when called.
+				var resolve_scope_promise = function(resolve, reject, method, args){
+					resolve(this.store[method].apply(this.store, args));
+				};
 
 				// Store the found results in the other adapters
-				else
+				var data 	 			= [],
+					promises 			= [],
+					collection_length 	= adapters_results[0].length || 0; // Store collection data length. Always accessible at position zero.
+
+				// Merge adapater result data together
+				data = _fn.merge_adapter_data.call(self, adapters_results);
+
+				// Detect if we've made any changes to the internal Store array
+				// If no changes are made, exit early by resolving the scope promise
+				if( adapters.length > 1 && data.length > collection_length ) // TODO: This won't detect actual object changes.
 				{
-					var data, promises = [],
-						collection_length = adapter_results[0]; // Store collection data length. Always accessible at position zero.
-
-					// Define a callback to read updated information from the store
-					var resolve_scope_promise = function(){
-						scope.promise.resolve(self.store[scope.method].apply(self.store, scope.args));
-					};
-
-					// Merge adapater result data together
-					data = _fn.merge_adapter_data.call(self, adapter_results);
-
-					// Detect if we've made any changes to the internal Store array
-					// If no changes are made, exit early by resolving the scope promise
-					if( data.length <= collection_length ) resolve_scope_promise();
-
 					// Convert the results into result objects.
 					// We need to do this here as well, as the results came from another adapter and will be raw objects.
 					// We want to store all data as result objects.
@@ -421,25 +416,91 @@
 
 					// Loop through all the adapters in reverse order. This ensures all results end up
 					// being saved back into the Store adapter. We keep track of when this is done using promises.
-					_.forEachRight(self.adapters, function(adapter){
+					_.forEachRight(adapters, function(adapter){
 						var result = adapter.insert_or_update.apply(adapter, [result_objects]); // insert or update
 						promises.push(_fn.create_adapter_request_promise(result));
 					});
 
 					// Once all found results have been saved back to all tried adapters, load the final result set from
 					// the Store adapter. This is guranteed to have the latest result set available, and will be in Result object format.
-					Promise.all(promises).then(function(results){ resolve_scope_promise(); });
+					Promise.all(promises).then(function(results){ callback(resolve_scope_promise); });
 				}
 
+				callback(resolve_scope_promise);
+
 			break;
+
+
+
+			case 'create':
+				callback(function(resolve, reject){ resolve(adapters_results[0]); });
+			break;
+
+
 
 			// Process deletion data
 			case 'delete':
 
-				adapter_results = adapter_results.pop();
+				// We only care about the Store adapter deletion results
+				var data = adapters_results[0];
 
-				// We only care about the store deletion results
-				var data = adapter_results[0];
+				_fn.emitter(settings.type, data);
+
+				// Resolve the promise with the deleted data
+				callback(function(resolve, reject){ resolve(data); });
+
+			break;
+
+
+
+			// Process the results from multiple adapters for other requests.
+			default:
+				callback(function(resolve, reject){ resolve(adapters_results); });
+			break;
+		}
+
+		return true;
+	}
+
+	_fn.emitter = function emitter(type, data){
+
+		var self = this;
+
+		switch(type)
+		{
+			case 'create':
+
+			break;
+
+			case 'read':
+
+				if( _.isArray(data) && data.length > 0 )
+				{
+					_.each(data, function(o){
+
+						// Run the on_load method
+						o.on_load();
+
+						// Trigger the 'add' event
+						self.trigger('add', [o]);
+
+					});
+				}
+				else if( !_.isArray(data) && _.isObject(data) )
+				{
+					// Run the on_load method
+					data.on_load();
+
+					// Trigger the 'add' event
+					self.trigger('add', [data]);
+				}
+
+			break;
+
+			case 'update':
+			break;
+
+			case 'delete':
 
 				// Loop the deleted data, and fire the on_remove method
 				if( _.isArray(data) && data.length > 0 )
@@ -451,19 +512,11 @@
 					data.on_remove();
 				}
 
-				// Resolve the promise with the deleted data
-				return scope.promise.resolve(data);
-
-			break;
-
-			// Process the results from multiple adapters for other requests.
-			default:
-				scope.promise.resolve(adapter_results);
 			break;
 		}
 
-		return true;
-	}
+		return this;
+	};
 
 	/**
 	 * Merges a collection of results from adapters into a single collection.
@@ -515,7 +568,10 @@
 	 */
 	_fn.merge = function merge(a, b, keys){
 
-		if( !_.isArray(a) || !_.isArray(b) ) return [];
+		// Source object should always be an array, this can be an empty object
+		// when get method is used on an empty collection however.
+		if( !_.isArray(b) ) b = [];
+		if( !_.isArray(a) ) return [];
 
 		// Loop through the source array of objects
 		_.each(b, function(obj, i){
@@ -611,8 +667,13 @@
 
 				// Add a direct core method for the store adapter
 				core_methods[method+'_direct'] = function(){
-					var args = Array.prototype.slice.call(arguments);
-					return this.store[method].apply(this.store, args);
+
+					var args = Array.prototype.slice.call(arguments),
+						data = _fn.get_adapter_result.apply(this, [this.store, method, settings, args]);
+
+					_fn.emitter.apply(this, [settings.type, data]);
+
+					return data;
 				};
 
 			});
@@ -918,7 +979,7 @@
 		 * @param  {object}   shared     An object of prototypal properties
 		 * @return {object}              Result object
 		 */
-		var _extend = function extend(shared){
+		var _extend = function _extend(shared){
 
 			// Create the shimmed object
 			var shim = _fn.shim(Result, {}, shared);

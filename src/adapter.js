@@ -100,14 +100,14 @@
 			delete_where 		: {type: 'delete'},
 			delete_where_in 	: {type: 'delete'},
 			delete_all 			: {type: 'delete'},
-			like				: {type: 'query'},
-			where				: {type: 'query'},
-			where_in 			: {type: 'query'},
-			where_or_in 		: {type: 'query'},
-			where_not_in 		: {type: 'query'},
-			sort				: {type: 'query'},
-			offset				: {type: 'query'},
-			limit				: {type: 'query'},
+			// like				: {type: 'query'},
+			// where				: {type: 'query'},
+			// where_in 			: {type: 'query'},
+			// where_or_in 		: {type: 'query'},
+			// where_not_in 		: {type: 'query'},
+			// sort				: {type: 'query'},
+			// offset				: {type: 'query'},
+			// limit				: {type: 'query'},
 
 		};
 
